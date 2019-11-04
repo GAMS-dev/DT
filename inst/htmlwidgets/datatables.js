@@ -63,7 +63,7 @@ DTWidget.formatDate = function(thiz, row, data, col, method, params) {
     d = d.split(/\D/);
     d = new Date(d[0], d[1] - 1, d[2]);
   } else {
-    d = new Date(d);
+    d = moment(d).toDate();
   }
   $(thiz.api().cell(row, col).node()).html(d[method].apply(d, params));
 };
