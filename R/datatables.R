@@ -612,7 +612,7 @@ DTDependency = function(style) {
   }
   htmlDependency(
     depName(style, 'dt-core'), DataTablesVersion, src = depPath('datatables'),
-    script = file.path('js', js), stylesheet = file.path('css', css),
+    script = file.path('js', js),
     all_files = FALSE
   )
 }
