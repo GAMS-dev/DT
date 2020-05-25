@@ -77,6 +77,7 @@ renderDataTable = function(
   outputInfoEnv[["session"]] = NULL
 
   exprFunc = shiny::exprToFunction(expr, env, quoted = TRUE)
+  argFunc = shiny::exprToFunction(list(..., server = server), env, quoted = FALSE)
   widgetFunc = function() {
     opts = options(DT.datatable.shiny = TRUE); on.exit(options(opts), add = TRUE)
     instance = exprFunc()
@@ -87,9 +88,13 @@ renderDataTable = function(
     }
   }
   processWidget = function(instance) {
+    args = argFunc()
+    server = args$server; args$server = NULL # the last element is `server`
+    # which is only used in `renderDT()` not `datatable()`, the reason
+    # of having it in `argFunc()` is we want `server` to be reactive
     if (!all(c('datatables', 'htmlwidget') %in% class(instance))) {
-      instance = datatable(instance, ...)
-    } else if (length(list(...)) != 0) {
+      instance = do.call(datatable, c(list(instance), args))
+    } else if (length(args) != 0) {
       warning("renderDataTable ignores ... arguments when expr yields a datatable object; see ?renderDataTable")
     }
 
@@ -116,6 +121,21 @@ renderDataTable = function(
         options$ajax$url = url
       }
       instance$x$options = fixServerOptions(options)
+
+      # We need to warn the use of "Select" extension in the server-side processing
+      # mode since right now there's no good way of supporting the server mode.
+      # More specifically, the Select ext can't remember the cross-page selections
+      # because the javascript implementation doesn't take the server mode into account.
+      # Until that gets changed, we are not able to integrate the Select ext with DT's
+      # own implementations.
+      if ('Select' %in% as.character(instance$x$extensions)) warning(
+        "The Select extension is not able to work with the server-side ",
+        "processing mode properly. It's recommended to use the Select extension ",
+        "only in the client-side processing mode (by setting `server = FALSE` ",
+        "in `DT::renderDT()`) or use DT's own selection implementations (",
+        "see the `selection` argument in ?DT::datatable).",
+        immediate. = TRUE, call. = FALSE
+      )
     }
 
     instance
@@ -247,24 +267,37 @@ dataTableProxy = function(
 #' @param selected an integer vector of row/column indices, or a matrix of two
 #'   columns (row and column indices, respectively) for cell indices; you may
 #'   use \code{NULL} to clear existing selections
+#' @param ignore.selectable when \code{FALSE} (the default), the "non-selectable"
+#'   range specified by \code{selection = list(selectable= )} is respected, i.e.,
+#'   you can't select "non-selectable" range. Otherwise, it is ignored.
+#'
 #' @rdname proxy
 #' @export
-selectRows = function(proxy, selected) {
-  invokeRemote(proxy, 'selectRows', list(I_null(as.integer(selected))))
+selectRows = function(proxy, selected, ignore.selectable = FALSE) {
+  invokeRemote(
+    proxy, 'selectRows',
+    list(I_null(as.integer(selected)), ignore.selectable)
+  )
 }
 
 #' @rdname proxy
 #' @export
-selectColumns = function(proxy, selected) {
-  invokeRemote(proxy, 'selectColumns', list(I_null(as.integer(selected))))
+selectColumns = function(proxy, selected, ignore.selectable = FALSE) {
+  invokeRemote(
+    proxy, 'selectColumns',
+    list(I_null(as.integer(selected)), ignore.selectable)
+  )
 }
 
 I_null = function(x) if (is.null(x)) list() else x
 
 #' @rdname proxy
 #' @export
-selectCells = function(proxy, selected) {
-  invokeRemote(proxy, 'selectCells', list(selected))
+selectCells = function(proxy, selected, ignore.selectable = FALSE) {
+  invokeRemote(
+    proxy, 'selectCells',
+    list(selected, ignore.selectable)
+  )
 }
 
 #' @param data a single row of data to be added to the table; it can be a matrix
@@ -277,7 +310,10 @@ selectCells = function(proxy, selected) {
 addRow = function(proxy, data) {
   if ((is.matrix(data) || is.data.frame(data)) && nrow(data) != 1)
     stop("'data' must be of only one row")
-  invokeRemote(proxy, 'addRow', list(as.list(unname(data)), I(rownames(data))))
+  # must apply unname() after as.list() because a data.table object
+  # can't be really unnamed. The names() attributes will be
+  # preserved but with empty strings (see #760).
+  invokeRemote(proxy, 'addRow', list(unname(as.list(data)), I(rownames(data))))
 }
 
 #' @rdname proxy
@@ -422,6 +458,14 @@ invokeRemote = function(proxy, method, args = list()) {
 
 shinyFun = function(name) getFromNamespace(name, 'shiny')
 
+# Works around the fact that session$getCurrentOutputInfo() in Shiny through
+# version 1.4 signals an error if there is no active output (the private field
+# ShinySession$currentOutputName is NULL). Consider removing in the future
+# sometime after https://github.com/rstudio/shiny/pull/2707 is released.
+getCurrentOutputName = function(session) {
+  tryCatch(session$getCurrentOutputInfo()[["name"]], error = function(e) NULL)
+}
+
 #' Register a data object in a shiny session for DataTables
 #'
 #' This function stores a data object in a shiny session and returns a URL that
@@ -448,7 +492,9 @@ shinyFun = function(name) getFromNamespace(name, 'shiny')
 #'   list(value = 'FOO', regex = 'false'), length = 10, ...)}) that return the
 #'   filtered table result according to the DataTables Ajax request
 #' @param outputId the output ID of the table (the same ID passed to
-#'   \code{dataTableOutput()}; if missing, a random string)
+#'   \code{dataTableOutput()}; if missing, an attempt to infer it from
+#'   \code{session} is made. If it can't be inferred, a random id is
+#'   generated.)
 #' @references \url{https://rstudio.github.io/DT/server.html}
 #' @return A character string (an Ajax URL that can be queried by DataTables).
 #' @example inst/examples/ajax-shiny.R
@@ -457,8 +503,9 @@ dataTableAjax = function(session, data, rownames, filter = dataTablesFilter, out
 
   oop = options(stringsAsFactors = FALSE); on.exit(options(oop), add = TRUE)
 
+  if (missing(outputId)) outputId = getCurrentOutputName(session)
   # abuse tempfile() to obtain a random id unique to this R session
-  if (missing(outputId)) outputId = basename(tempfile(''))
+  if (is.null(outputId)) outputId = basename(tempfile(''))
 
   # deal with row names: rownames = TRUE or missing, use rownames(data)
   rn = if (missing(rownames) || isTRUE(rownames)) base::rownames(data) else {
@@ -621,9 +668,11 @@ grep2 = function(pattern, x, ignore.case = FALSE, fixed = FALSE, ...) {
   }
   # when the user types in the search box, the regular expression may not be
   # complete before it is sent to the server, in which case we do not search
-  if (!fixed && inherits(try(grep(pattern, ''), silent = TRUE), 'try-error'))
+  if (!fixed && inherits(try(grep(pattern, '', perl = TRUE), silent = TRUE), 'try-error'))
     return(seq_along(x))
-  grep(pattern, x, ignore.case = ignore.case, fixed = fixed, ...)
+  # #749 if both fixed and perl are TRUE, the latter will be ignored by R with
+  # an annoyed warning
+  grep(pattern, x, ignore.case = ignore.case, fixed = fixed, perl = !fixed, ...)
 }
 
 # filter a numeric/date/time vector using the search string "lower ... upper"

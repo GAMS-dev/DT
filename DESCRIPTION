@@ -1,7 +1,7 @@
 Package: DT
 Type: Package
 Title: A Wrapper of the JavaScript Library 'DataTables' (edited for MIRO)
-Version: 0.9.2.9999
+Version: 0.13.4.9999
 Authors@R: c(
     person("Yihui", "Xie", email = "xie@yihui.name", role = c("aut", "cre")),
     person("Joe", "Cheng", role = "aut"),
@@ -16,14 +16,14 @@ Authors@R: c(
     person("Brian", "Reavis", role = c("ctb", "cph"), comment = "selectize.js in htmlwidgets/lib"),
     person("Leon", "Gersen", role = c("ctb", "cph"), comment = "noUiSlider in htmlwidgets/lib"),
     person("Bartek", "Szopka", role = c("ctb", "cph"), comment = "jquery.highlight.js in htmlwidgets/lib"),
-    person("RStudio Inc", role = "cph")
+    person("RStudio, PBC", role = "cph")
     )
 Maintainer: Yihui Xie <xie@yihui.name>
 Description: Data objects in R can be rendered as HTML tables using the
     JavaScript library 'DataTables' (typically via R Markdown or Shiny). The
     'DataTables' library has been included in this R package. The package name
     'DT' is an abbreviation of 'DataTables'.
-URL: https://rstudio.github.io/DT
+URL: https://github.com/rstudio/DT
 BugReports: https://github.com/rstudio/DT/issues
 License: GPL-3 | file LICENSE
 Imports:
@@ -36,7 +36,8 @@ Imports:
 Suggests:
     knitr (>= 1.8),
     rmarkdown,
-    shiny (>= 1.1.0)
+    shiny (>= 1.2.0),
+    testit
 VignetteBuilder: knitr
 RoxygenNote: 7.1.0
 Encoding: UTF-8
