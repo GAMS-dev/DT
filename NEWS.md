@@ -1,8 +1,18 @@
+# CHANGES IN DT VERSION 0.15
+
+## BUG FIXES
+
+- Fix the issue that the formatting functions may throw error for named colname inputs (thanks, @jarauh @shrektan, #831).
+
+- The `input$xxx_xxx_selected` values will always be reset to `NULL` or an empty list when the table gets reloaded (thanks, @stibu81 @shrektan, #828).
+
 # CHANGES IN DT VERSION 0.14
 
 ## NEW FEATURES
 
 - Now the user is able to control the selection range by `datatable(..., selection = list(selectable = 3:5))`, where positive and non-positive `selectable` means "enable" and "disable", respectively (thanks, @tomasreigl @shrektan, #201 #793).
+
+- Added a function `styleValue()` to use column values as CSS values. When the user has a complex CSS rule to apply, storing the CSS values in the columns of the table and call this function is very convenient (thanks, @Mosk915 @shrektan, #801 #802).
 
 - Clicking on a row or cell now always triggers a reactive event in Shiny (`input$tableId_row_last_clicked` or `input$tableId_cell_clicked`), even if the same row or cell is clicked multiple times (thanks @gadenbuie, #811).
 
