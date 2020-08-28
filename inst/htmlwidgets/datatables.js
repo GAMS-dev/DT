@@ -1032,6 +1032,10 @@ HTMLWidgets.widget({
         }
         table.on('mousedown.dt', 'tbody tr', function(e) {
           var $this = $(this), thisRow = table.row(this);
+          if ($this.parents('table.DTFC_Cloned').length) {
+            // we don't want to be able to select cells in overlay table
+            return;
+          }
           if (selMode === 'multiple') {
             if (e.shiftKey && lastClickedRow !== undefined) {
               // select or de-select depends on the last clicked row's status
