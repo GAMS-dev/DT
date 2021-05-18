@@ -736,7 +736,7 @@ HTMLWidgets.widget({
     if (data.editable) table.on('dblclick.dt', 'tbody td', function(e) {
       // only bring up the editor when the cell itself is dbclicked, and ignore
       // other dbclick events bubbled up (e.g. from the <input>)
-      if (e.target !== this) return;
+      if (e.target !== this && e.target.className !== 'dt-allow-click-event') return;
       var target = [], immediate = false;
       switch (data.editable.target) {
         case 'cell':
