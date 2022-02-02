@@ -15,7 +15,7 @@ datatable(
   caption = NULL,
   filter = c("none", "bottom", "top"),
   escape = TRUE,
-  style = "default",
+  style = "auto",
   width = NULL,
   height = NULL,
   elementId = NULL,
@@ -79,14 +79,20 @@ alternatively, you can specify numeric column indices or column names to
 indicate which columns to escape, e.g. \code{1:5} (the first 5 columns),
 \code{c(1, 3, 4)}, or \code{c(-1, -3)} (all columns except the first and
 third), or \code{c('Species', 'Sepal.Length')}; since the row names take
-the first column to display, you should add the numeric column indices
-by one when using \code{rownames}}
+the first column to display, you should add the numeric column indices by
+one when using \code{rownames}}
 
-\item{style}{the style name (\url{https://datatables.net/manual/styling/});
-currently only \code{'default'}, \code{'bootstrap'}, and
-\code{'bootstrap4'} are supported. Note that DT doesn't contain the theme
-files so in order to display the style correctly, you have to link
-the necessary files in the header.}
+\item{style}{either \code{'auto'}, \code{'default'}, \code{'bootstrap'}, or
+\code{'bootstrap4'}. If \code{'auto'}, and a **bslib** theme is
+currently active, then bootstrap styling is used in a way that "just works"
+for the active theme. Otherwise,
+\href{https://datatables.net/manual/styling/classes}{DataTables
+\code{'default'} styling} is used. If set explicitly to \code{'bootstrap'}
+or \code{'bootstrap4'}, one must take care to ensure Bootstrap's HTML
+dependencies (as well as Bootswatch themes, if desired) are included on the
+page. Note, when set explicitly, it's the user's responsibility to ensure
+that only one unique `style` value is used on the same page, if multiple
+DT tables exist, as different styling resources may conflict with each other.}
 
 \item{width, height}{Width/Height in pixels (optional, defaults to automatic
 sizing)}
@@ -98,7 +104,9 @@ it's containing element. If the table can't fit fully into it's container
 then vertical and/or horizontal scrolling of the table cells will occur.}
 
 \item{autoHideNavigation}{\code{TRUE} to automatically hide navigational UI
-when the number of total records is less than the page size.}
+(only display the table body) when the number of total records is less
+than the page size. Note, it only works on the client-side processing mode
+and the `pageLength` option should be provided explicitly.}
 
 \item{selection}{the row/column selection mode (single or multiple selection
 or disable selection) when a table widget is rendered in a Shiny app;
@@ -124,10 +132,25 @@ it to \code{"row"} to be able to edit a row, or \code{"column"} to edit a
 column, or \code{"all"} to edit all cells on the current page of the table.
 In all modes, start editing by doubleclicking on a cell. This argument can
 also be a list of the form \code{list(target = TARGET, disable =
-list(columns = INDICES))}, where \code{TARGET} can be \code{cell},
-\code{row}, \code{column}, or \code{all}, and \code{INDICES} is an integer
-vector of column indices. Use the list form if you want to disable editing
-certain columns.}
+list(columns = INDICES))}, where \code{TARGET} can be \code{"cell"},
+\code{"row"}, \code{"column"}, or \code{"all"}, and \code{INDICES} is an
+integer vector of column indices. Use the list form if you want to disable
+editing certain columns. You can also restrict the editing to accept only
+numbers by setting this argument to a list of the form \code{list(target =
+TARGET, numeric = INDICES)} where \code{INDICES} can be the vector of the
+indices of the columns for which you want to restrict the editing to
+numbers or \code{"all"} to restrict the editing to numbers for all columns.
+If you don't set \code{numeric}, then the editing is restricted to numbers
+for all numeric columns; set \code{numeric = "none"} to disable this
+behavior. Finally, you can also edit the cells in text areas, which are
+useful for large contents. For that, set the \code{editable} argument to a
+list of the form \code{list(target = TARGET, area = INDICES)} where
+\code{INDICES} can be the vector of the indices of the columns for which
+you want the text areas, or \code{"all"} if you want the text areas for
+all columns. Of course, you can request the numeric editing for some
+columns and the text areas for some other columns by setting
+\code{editable} to a list of the form \code{list(target = TARGET, numeric
+= INDICES1, area = INDICES2)}.}
 }
 \description{
 This function creates an HTML widget to display rectangular data (a matrix or
@@ -166,6 +189,27 @@ data frame) using the JavaScript library DataTables.
       use the Select extension because the latter doesn't support the
       server-side processing mode well. Please set this argument to
       \code{'none'} if you really want to use the Select extension.
+  }
+  \code{options$columnDefs}:
+  \enumerate{
+    \item \code{columnDefs} is an option that provided by the DataTables library
+      itself, where the user can set various attributes for columns. It must be
+      provided as a list of list, where each sub-list must contain a vector named 'targets',
+      specifying the applied columns, i.e.,
+      \code{list(list(..., targets = '_all'), list(..., targets = c(1, 2)))}
+    \item \code{columnDefs$targets} is a vector and should be one of:
+      \itemize{
+        \item 0 or a positive integer: column index counting from the left.
+        \item A negative integer: column index counting from the right.
+        \item A string: the column name. Note, it must be the names of the
+          original data, not the ones that (could) be changed via param \code{colnames}.
+        \item The string "_all": all columns (i.e. assign a default).
+      }
+    \item When conflicts happen, e.g., a single column is defined for some property
+      twice but with different values, the value that defined earlier takes the priority.
+      For example, \code{list(list(visible=FALSE, target=1), list(visible=TRUE, target=1))}
+      results in a table whose first column is \emph{invisible}.
+    \item See \url{https://datatables.net/reference/option/columnDefs} for more.
   }
 }
 \note{

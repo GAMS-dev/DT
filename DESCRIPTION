@@ -1,7 +1,7 @@
 Package: DT
 Type: Package
 Title: A Wrapper of the JavaScript Library 'DataTables' (edited for MIRO)
-Version: 0.15.9999
+Version: 0.20.9999
 Authors@R: c(
     person("Yihui", "Xie", email = "xie@yihui.name", role = c("aut", "cre")),
     person("Joe", "Cheng", role = "aut"),
@@ -16,6 +16,7 @@ Authors@R: c(
     person("Brian", "Reavis", role = c("ctb", "cph"), comment = "selectize.js in htmlwidgets/lib"),
     person("Leon", "Gersen", role = c("ctb", "cph"), comment = "noUiSlider in htmlwidgets/lib"),
     person("Bartek", "Szopka", role = c("ctb", "cph"), comment = "jquery.highlight.js in htmlwidgets/lib"),
+    person("Alex", "Pickering", role = c("ctb")),
     person("RStudio, PBC", role = "cph")
     )
 Maintainer: Yihui Xie <xie@yihui.name>
@@ -32,12 +33,14 @@ Imports:
     jsonlite (>= 0.9.16),
     magrittr,
     crosstalk,
+    jquerylib,
     promises
 Suggests:
     knitr (>= 1.8),
     rmarkdown,
-    shiny (>= 1.2.0),
+    shiny (>= 1.6),
+    bslib,
     testit
 VignetteBuilder: knitr
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.2
 Encoding: UTF-8

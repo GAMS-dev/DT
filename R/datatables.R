@@ -44,13 +44,19 @@
 #'   indicate which columns to escape, e.g. \code{1:5} (the first 5 columns),
 #'   \code{c(1, 3, 4)}, or \code{c(-1, -3)} (all columns except the first and
 #'   third), or \code{c('Species', 'Sepal.Length')}; since the row names take
-#'   the first column to display, you should add the numeric column indices
-#'   by one when using \code{rownames}
-#' @param style the style name (\url{https://datatables.net/manual/styling/});
-#'   currently only \code{'default'}, \code{'bootstrap'}, and
-#'   \code{'bootstrap4'} are supported. Note that DT doesn't contain the theme
-#'   files so in order to display the style correctly, you have to link
-#'   the necessary files in the header.
+#'   the first column to display, you should add the numeric column indices by
+#'   one when using \code{rownames}
+#' @param style either \code{'auto'}, \code{'default'}, \code{'bootstrap'}, or
+#'   \code{'bootstrap4'}. If \code{'auto'}, and a **bslib** theme is
+#'   currently active, then bootstrap styling is used in a way that "just works"
+#'   for the active theme. Otherwise,
+#'   \href{https://datatables.net/manual/styling/classes}{DataTables
+#'   \code{'default'} styling} is used. If set explicitly to \code{'bootstrap'}
+#'   or \code{'bootstrap4'}, one must take care to ensure Bootstrap's HTML
+#'   dependencies (as well as Bootswatch themes, if desired) are included on the
+#'   page. Note, when set explicitly, it's the user's responsibility to ensure
+#'   that only one unique `style` value is used on the same page, if multiple
+#'   DT tables exist, as different styling resources may conflict with each other.
 #' @param width,height Width/Height in pixels (optional, defaults to automatic
 #'   sizing)
 #' @param elementId An id for the widget (a random string by default).
@@ -58,7 +64,9 @@
 #'   it's containing element. If the table can't fit fully into it's container
 #'   then vertical and/or horizontal scrolling of the table cells will occur.
 #' @param autoHideNavigation \code{TRUE} to automatically hide navigational UI
-#'   when the number of total records is less than the page size.
+#'   (only display the table body) when the number of total records is less
+#'   than the page size. Note, it only works on the client-side processing mode
+#'   and the `pageLength` option should be provided explicitly.
 #' @param selection the row/column selection mode (single or multiple selection
 #'   or disable selection) when a table widget is rendered in a Shiny app;
 #'   alternatively, you can use a list of the form \code{list(mode = 'multiple',
@@ -80,10 +88,25 @@
 #'   column, or \code{"all"} to edit all cells on the current page of the table.
 #'   In all modes, start editing by doubleclicking on a cell. This argument can
 #'   also be a list of the form \code{list(target = TARGET, disable =
-#'   list(columns = INDICES))}, where \code{TARGET} can be \code{cell},
-#'   \code{row}, \code{column}, or \code{all}, and \code{INDICES} is an integer
-#'   vector of column indices. Use the list form if you want to disable editing
-#'   certain columns.
+#'   list(columns = INDICES))}, where \code{TARGET} can be \code{"cell"},
+#'   \code{"row"}, \code{"column"}, or \code{"all"}, and \code{INDICES} is an
+#'   integer vector of column indices. Use the list form if you want to disable
+#'   editing certain columns. You can also restrict the editing to accept only
+#'   numbers by setting this argument to a list of the form \code{list(target =
+#'   TARGET, numeric = INDICES)} where \code{INDICES} can be the vector of the
+#'   indices of the columns for which you want to restrict the editing to
+#'   numbers or \code{"all"} to restrict the editing to numbers for all columns.
+#'   If you don't set \code{numeric}, then the editing is restricted to numbers
+#'   for all numeric columns; set \code{numeric = "none"} to disable this
+#'   behavior. Finally, you can also edit the cells in text areas, which are
+#'   useful for large contents. For that, set the \code{editable} argument to a
+#'   list of the form \code{list(target = TARGET, area = INDICES)} where
+#'   \code{INDICES} can be the vector of the indices of the columns for which
+#'   you want the text areas, or \code{"all"} if you want the text areas for
+#'   all columns. Of course, you can request the numeric editing for some
+#'   columns and the text areas for some other columns by setting
+#'   \code{editable} to a list of the form \code{list(target = TARGET, numeric
+#'   = INDICES1, area = INDICES2)}.
 #' @details \code{selection}:
 #'   \enumerate{
 #'     \item The argument could be a scalar string, which means the selection
@@ -117,6 +140,27 @@
 #'       server-side processing mode well. Please set this argument to
 #'       \code{'none'} if you really want to use the Select extension.
 #'   }
+#'   \code{options$columnDefs}:
+#'   \enumerate{
+#'     \item \code{columnDefs} is an option that provided by the DataTables library
+#'       itself, where the user can set various attributes for columns. It must be
+#'       provided as a list of list, where each sub-list must contain a vector named 'targets',
+#'       specifying the applied columns, i.e.,
+#'       \code{list(list(..., targets = '_all'), list(..., targets = c(1, 2)))}
+#'     \item \code{columnDefs$targets} is a vector and should be one of:
+#'       \itemize{
+#'         \item 0 or a positive integer: column index counting from the left.
+#'         \item A negative integer: column index counting from the right.
+#'         \item A string: the column name. Note, it must be the names of the
+#'           original data, not the ones that (could) be changed via param \code{colnames}.
+#'         \item The string "_all": all columns (i.e. assign a default).
+#'       }
+#'     \item When conflicts happen, e.g., a single column is defined for some property
+#'       twice but with different values, the value that defined earlier takes the priority.
+#'       For example, \code{list(list(visible=FALSE, target=1), list(visible=TRUE, target=1))}
+#'       results in a table whose first column is \emph{invisible}.
+#'     \item See \url{https://datatables.net/reference/option/columnDefs} for more.
+#'   }
 #' @note You are recommended to escape the table content for security reasons
 #'   (e.g. XSS attacks) when using this function in Shiny or any other dynamic
 #'   web applications.
@@ -128,7 +172,7 @@
 datatable = function(
   data, options = list(), class = 'display', callback = JS('return table;'),
   rownames, colnames, container, caption = NULL, filter = c('none', 'bottom', 'top'),
-  escape = TRUE, style = 'default', width = NULL, height = NULL, elementId = NULL,
+  escape = TRUE, style = 'auto', width = NULL, height = NULL, elementId = NULL,
   fillContainer = getOption('DT.fillContainer', NULL),
   autoHideNavigation = getOption('DT.autoHideNavigation', NULL),
   selection = c('multiple', 'single', 'none'), extensions = list(), plugins = NULL,
@@ -186,6 +230,10 @@ datatable = function(
     numc = numc + 1  # move indices of numeric columns to the right by 1
   }
 
+  # convert the string targets; it must be defined here (not after), as it's supported to be
+  # applied to the "original" column names, instead of the "modified“ ones, e.g., via the `colnames` arg
+  options[["columnDefs"]] = colDefsTgtHandle(options[["columnDefs"]], base::colnames(data))
+
   # align numeric columns to the right
   if (length(numc)) {
     # if the `className` of the column has already been defined by the user,
@@ -220,7 +268,7 @@ datatable = function(
   if (length(colnames) && colnames[1] == ' ')
     options = appendColumnDefs(options, list(orderable = FALSE, targets = 0))
 
-  style = match.arg(tolower(style), DTStyles())
+  style = normalizeStyle(style)
   if (grepl('^bootstrap', style)) class = DT2BSClass(class)
   if (style != 'default') params$style = style
 
@@ -228,13 +276,14 @@ datatable = function(
   if (isTRUE(fillContainer)) class = paste(class, 'fill-container')
 
   if (is.character(filter)) filter = list(position = match.arg(filter))
-  filter = modifyList(list(position = 'none', clear = TRUE, plain = FALSE), filter)
+  filter = modifyList(list(position = 'none', clear = TRUE, plain = FALSE, vertical = FALSE, opacity = 1), filter)
   # HTML code for column filters
   filterHTML = as.character(filterRow(data, !is.null(rn) && colnames[1] == ' ', filter))
   # use the first row in the header as the sorting cells when I put the filters
   # in the second row
   if (filter$position == 'top') options$orderCellsTop = TRUE
   params$filter = filter$position
+  params$vertical = filter$vertical
   if (filter$position != 'none') params$filterHTML = filterHTML
 
   if (missing(container)) {
@@ -254,13 +303,20 @@ datatable = function(
   params$extensions = if (length(extensions)) as.list(extensions)
 
   # automatically configure options and callback for extensions
-  if ('Responsive' %in% extensions) options$responsive = TRUE
+  if ('Responsive' %in% extensions && is.null(options$responsive)) {
+    options$responsive = TRUE
+  }
 
   params$caption = captionString(caption)
 
   if (isTRUE(editable)) editable = 'cell'
-  if (is.character(editable)) editable = list(target = editable, disable = list(columns = NULL))
-  if (is.list(editable)) params$editable = editable
+  if (is.character(editable))
+    editable = list(target = editable, disable = list(columns = NULL))
+  if (is.list(editable)) {
+    editable$numeric = makeEditableNumericField(editable$numeric, data, rn)
+    editable$area = makeEditableAreaField(editable$area, data, rn)
+    params$editable = editable
+  }
 
   if (!identical(class(callback), class(JS(''))))
     stop("The 'callback' argument only accept a value returned from JS()")
@@ -270,10 +326,17 @@ datatable = function(
     if (identical(options$lengthMenu, c(10, 25, 50, 100)))
       options$lengthMenu = NULL  # that is just the default
   }
+  if (!is.null(options[['search']]) && !is.list(options[['search']]))
+    stop("The value of `search` in `options` must be NULL or a list")
 
   # record fillContainer and autoHideNavigation
   if (!is.null(fillContainer)) params$fillContainer = fillContainer
-  if (!is.null(autoHideNavigation)) params$autoHideNavigation = autoHideNavigation
+  if (!is.null(autoHideNavigation)) {
+    if (isTRUE(autoHideNavigation) && length(options$pageLength) == 0L)
+      warning("`autoHideNavigation` will be ignored if the `pageLength` option is not provided.",
+              immediate. = TRUE)
+    params$autoHideNavigation = autoHideNavigation
+  }
 
   params = structure(modifyList(params, list(
     data = data, container = as.character(container), options = options,
@@ -303,7 +366,7 @@ datatable = function(
     )
   }
 
-  deps = list(DTDependency(style))
+  deps = DTDependencies(style)
   deps = c(deps, unlist(
     lapply(extensions, extDependency, style, options),
     recursive = FALSE
@@ -344,6 +407,34 @@ datatable = function(
 
       instance
     }
+  )
+}
+
+makeEditableNumericField = function(x, data, rn) {
+  as.list(
+    if (is.null(x))
+      which(unname(vapply(data, is.numeric, logical(1L)))) - 1L
+    else if (identical(x, 'none'))
+      NULL
+    else if (identical(x, 'all'))
+      seq_along(data) - 1L
+    else if (is.null(rn))
+      x - 1
+    else
+      x
+  )
+}
+
+makeEditableAreaField = function(x, data, rn) {
+  as.list(
+    if (is.null(x))
+      NULL
+    else if (identical(x, 'all'))
+      seq_along(data) - 1L
+    else if (is.null(rn))
+      x - 1
+    else
+      x
   )
 }
 
@@ -412,6 +503,36 @@ classNameDefinedColumns = function(options, ncol) {
   unique(cols)
 }
 
+targetIdx = function(targets, names) {
+  # return the js side idx which starts from zero
+  unname(convertIdx(targets, names)) - 1L
+}
+
+colDefsTgtHandle = function(columnDefs, names) {
+  convert = function(targets, names) {
+    if (is.list(targets)) {
+      lapply(targets, convert, names = names)
+    } else if (is.character(targets)) {
+      any_all = "_all" %in% targets
+      if (any_all) {
+        out = "_all"
+      } else {
+        out = targetIdx(targets, names)
+      }
+      out
+    } else {
+      targets
+    }
+  }
+  error_msg <- "options$columnDefs must be `NULL` or a list of list, where each of the internal list must contain a `targets` element."
+  lapply(columnDefs, function(x) {
+    if (!is.list(x) || !"targets" %in% names(x)) {
+      stop(error_msg, call. = FALSE)
+    }
+    x[["targets"]] = convert(x[["targets"]], names)
+    x
+  })
+}
 
 # convert character indices to numeric
 convertIdx = function(i, names, n = length(names), invert = FALSE) {
@@ -502,7 +623,7 @@ tableHead = function(names, type = c('head', 'foot'), escape = TRUE, ...) {
 #' @importFrom htmltools tagList
 filterRow = function(
   data, rownames = TRUE,
-  filter = list(position = 'none', clear = TRUE, plain = FALSE)
+  filter = list(position = 'none', clear = TRUE, plain = FALSE, vertical = FALSE, opacity = 1)
 ) {
   if (filter$position == 'none') return()
   tds = list()
@@ -540,10 +661,17 @@ filterRow = function(
         d1 = floor(d1 * 10^dec) / 10^dec
         d2 = ceiling(d2 * 10^dec) / 10^dec
       }
+      is_vert <- filter$vertical
+
       if (is.finite(d1) && is.finite(d2) && d2 > d1) tags$div(
-        style = 'display: none; position: absolute; width: 200px;',
+        style = paste0('display: none;position: absolute;width: 200px;opacity: ', filter$opacity),
         tags$div(`data-min` = d1, `data-max` = d2, `data-scale` = dec),
-        tags$span(style = 'float: left;'), tags$span(style = 'float: right;')
+        if (is_vert) tagList(tags$span(style = 'position: absolute; bottom: 0px; left: 15px;'),
+                             tags$span(style = 'display: none;', HTML('&nbsp;')),
+                             tags$span(style = 'position: absolute; top: 2px; left: 15px;')
+                             )
+        else tagList(tags$span(style = 'float: left;'),
+                     tags$span(style = 'float: right;'))
       ) else {
         t = 'disabled'
         NULL
@@ -691,8 +819,30 @@ extraDependency = function(names = NULL, ...) {
   })
 }
 
+normalizeStyle = function(style) {
+  style = tolower(style)
+  if (!identical(style, 'auto')) {
+    return(match.arg(style, DTStyles()))
+  }
+  #if (system.file(package = 'bslib') == '') {
+    return('default')
+  #}
+  # This function should really be called inside preRenderHook() (if called anytime earlier,
+  # we're running the risk of not knowing the true theme). Overall, I think that's ok in this
+  # case since DT doesn't need to compile new Sass, it just needs to know whether or not
+  # Bootstrap is relevant. If we run into problems in the future, let's move this to preRenderHook()
+  # time, but that's going to be a non-trivial change to existing logic
+  theme = bslib::bs_current_theme()
+  if (is.null(theme)) {
+    return('default')
+  }
+  style = if ('3' %in% bslib::theme_version(theme)) 'bootstrap' else 'bootstrap4'
+  # Have style remember if bslib should be a dependency
+  structure(style, bslib = TRUE)
+}
+
 # core JS and CSS dependencies of DataTables
-DTDependency = function(style) {
+DTDependencies = function(style) {
   js = 'jquery.dataTables.min.js'
   if (style == 'default') {
     # patch the default style
@@ -704,11 +854,13 @@ DTDependency = function(style) {
     if (style == 'bootstrap') css = c(css, 'dataTables.bootstrap.extra.css')
     if (style == 'bootstrap4') css = c(css, 'dataTables.bootstrap4.extra.css')
   }
-  htmlDependency(
-    depName(style, 'dt-core'), DataTablesVersion, src = depPath('datatables'),
+  list(htmlDependency(
+    depName(style, 'dt-core'),
+    DataTablesVersion,
+    src = depPath('datatables'),
     script = file.path('js', js),
     all_files = FALSE
-  )
+  ))
 }
 
 # translate DataTables classes to Bootstrap table classes
@@ -720,9 +872,11 @@ DT2BSClass = function(class) {
     'cell-border' = 'table-bordered', 'compact' = 'table-condensed',
     'hover' = 'table-hover', 'stripe' = 'table-striped'
   )
+  # translate known default styling classes to BS table classes and keep
+  # unknown classes as they are
   class = c(
     BSclass[intersect(class, names(BSclass))],
-    grep('^table-', class, value = TRUE)
+    setdiff(class, names(BSclass))
   )
   class = unique(c('table', class))
   paste(class, collapse = ' ')

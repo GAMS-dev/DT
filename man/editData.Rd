@@ -11,7 +11,7 @@ editData(data, info, proxy = NULL, rownames = TRUE, resetPaging = FALSE, ...)
 
 \item{info}{The information about the edited cells. It should be obtained
 from \code{input$tableId_cell_edit} from Shiny, and is a data frame
-containing columns \code{row}, \code{column}, and \code{value}.}
+containing columns \code{row}, \code{col}, and \code{value}.}
 
 \item{proxy, resetPaging, ...}{(Optional) If \code{proxy} is provided, it must
 be either a character string of the output ID of the table or a proxy
@@ -28,4 +28,8 @@ The updated data object.
 When editing cells in a DataTable in a Shiny app, we know the row/column
 indices and values of the cells that were edited. With these information, we
 can update the data object behind the DataTable accordingly.
+}
+\note{
+For factor columns, new levels would be automatically added when necessary
+  to avoid \code{NA} coercing.
 }

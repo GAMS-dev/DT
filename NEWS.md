@@ -1,3 +1,96 @@
+# CHANGES IN DT VERSION 0.21
+
+## NEW FEATURES
+
+- Add the `zero.print` argument to `formatPercentage()`, `formatCurrency()`, `formatSignif()` and `formatRound()`, which allows to control the format of zero values. It's useful when the data is "sparse" (thanks, @shrektan #953).
+
+## MAJOR CHANGES
+
+- Now users can provide column names of the data to `options$columnDefs$targets`. Previously, it only supports column indexes or "_all" (thanks, @shrektan #948).
+
+## MINOR CHANGES
+
+- `styleRow()` and `styleEqual()` now allows a scalar `values` argument like other R functions, e.g., `styleRow(1:5, 'abcd')` is the same as `styleRow(1:5, rep('abcd', 5))`. It throws error that `the length(rows) must be equal to length(values)` in the previous version (thanks, @shrektan #955).
+
+## BUG FIXES
+
+- Fix the bug that `addRow()` doesn't support a list of `data` after R 3.4.0, where `structure(NULL, ...)` was deprecated (thanks, @stla @shrektan #959).
+
+# CHANGES IN DT VERSION 0.20
+
+## MAJOR CHANGES
+
+- Upgraded the DataTables library to v1.11.3 (thanks, @shrektan #942, @michaelquinn32 #940).
+
+# CHANGES IN DT VERSION 0.19
+
+## NEW FEATUERS
+
+- Add `vertical` and `opacity` option to `filter` which applies to the noUiSliders. This is useful with limited width DataTables to prevent x overflow (thanks, @alexvpickering, #919).
+
+- Now the user is able to restrict the editing to accept only numbers by, e.g., `datatable(..., editable = list(target = "cell", numeric = 3:5))`. By default, the editing is restricted to numbers for all numeric columns; set `numeric = "none"` to disable this behavior (thanks, @stla, #860 #824).
+
+- Now the user can request text areas for the editing by, e.g., `datatable(..., editable = list(target = "cell", area = 1:2))`. Text areas are useful for cells with large contents (thanks, @stla #860, @fabiangehring #671).
+
+## MAJOR CHANGES
+
+- Upgraded jQuery from v1.12.4 to v3.x imported from the **jquerylib** R package.
+
+# CHANGES IN DT VERSION 0.18
+
+## NEW FEATURES
+
+- `datatable()`'s `style` argument now defaults to `'auto'`, which resolves to either `'bootstrap'` or `'bootstrap4'` when a `{bslib}` theme is relevant. If a `{bslib}` theme isn't relevant, `'auto'` resolves to the old default value of `'default'` (thanks, @cpsievert, #852).
+
+- Add a new function `styleRow()`. It's useful when you want to apply CSS styles based on Row Indexes (thanks, @s-fleck, #894). 
+
+## BUG FIXES
+
+- `datatable(data)` and `datatable(data, fillContainer = TRUE)` now work as expected when statically rendered inside `flexdashboard::flex_dashboard()` (thanks, @cpsievert, #904).
+
+# CHANGES IN DT VERSION 0.17
+
+## NEW FEATURES
+
+- Support the new datatables' extension [SearchBuilder](https://datatables.net/extensions/searchbuilder/). With this new extension, users can construct a complex search query by adding groups and conditions. Note, as the time of writing, this extension only works on the client-side processing mode (thanks, @stla, #875)
+
+- Add a new plugin [diacritics-neutralise](https://datatables.net/plug-ins/filtering/type-based/diacritics-neutralise), which can be used for searching accented, _non-Latin_ characters with their unaccented counterparts. Note, it will only work in the client-side processing mode (thanks, @tyler-richardett, #887).
+
+## MINOR CHANGES
+
+- The `autoHideNavigation` argument now works with the default theme. In addition, the prerequisite is properly documented. Specifically speaking, it only works when the `pageLength` option is provided and is rendered in the client-side processing mode (thanks, @bhogan-mitre, #856). 
+
+- When editing factor columns, `editData()` now automatically updates the factor levels if it's necessary (thanks, @aman-malik3010, #865).
+
+## BUG FIXES
+
+- Fix the issue that `addRow()` would fail when the proxy DT table contains no data (e.g., a zero-row data.frame) (thanks, @chalioui, #888).
+
+- DT no longer overrides the `options$responsive` to `TRUE`. Thus, it enables users to provide customized options for the Responsive extension (thanks, @hdrab127, #885).
+
+
+# CHANGES IN DT VERSION 0.16
+
+## NEW FEATURES
+
+- Add a new plugin [accent-neutralise](https://datatables.net/plug-ins/filtering/type-based/accent-neutralise), which can be used for searching accented characters with their unaccented counterparts. Note, it will only work in the client-side processing mode (#822).
+
+- `addRow()` now has a new parameter `resetPaging`. By setting it to `FALSE`, we can keep the paging position after adding a row (thanks, @stanstrup, #853).
+
+## MINOR CHANGES
+
+- Upgrade the SearchPanes extension to v1.1.1 so that it can [display all the entries properly with the Scroller extension](https://datatables.net/forums/discussion/62807/searchpanes-button-filtering-value-only-show-10-from-all-available-values-with-scroller-extension) (thanks, @JonasMandel @stla, #820).
+
+- The `class` argument now keeps user-defined classes with bootstrap themes (thanks, @mmuurr, #806).
+
+- Now DT will throw a clear error message if the value of `search` provided in `datatables(..., options=)` is illegal (thanks, @realHenningLorenzen, #848).
+
+## BUG FIXES
+
+- Fix the issue that the sorting results may not be expected after formatting functions applied. This is a regression of PR #777 (thanks, @fernandofernandezgonzalez @shrektan, #837).
+
+- `styleColorBar()` now displays correctly on Safari, when the data is greater than the upper limit, due to negative css percentage values (thanks, @Seyphaton, #843).
+
 # CHANGES IN DT VERSION 0.15
 
 ## BUG FIXES
@@ -128,7 +221,7 @@
 
 ## NEW FEATURES
 
-- The table editor has been enhanced: now the `editable` argument of `datatable()` can take four possible values, `cell` (or `TRUE` for backward compatibility), `row`, `column`, or `all`, which means you can edit a single cell a time, or a whole row or column, or all cells in the table. To trigger the editor, doubleclick on any cell. To submit the edit, hit `Ctrl + Enter` when multiple cells are being edited, or hit `Esc` to cancel the edit. See https://github.com/rstudio/DT/tree/master/inst/examples/DT-edit for comprehensive examples (thanks, @LukasK13 #509 and @mgirlich #493).
+- The table editor has been enhanced: now the `editable` argument of `datatable()` can take four possible values, `cell` (or `TRUE` for backward compatibility), `row`, `column`, or `all`, which means you can edit a single cell a time, or a whole row or column, or all cells in the table. To trigger the editor, doubleclick on any cell. To submit the edit, hit `Ctrl + Enter` when multiple cells are being edited, or hit `Esc` to cancel the edit. See https://github.com/rstudio/DT/tree/main/inst/examples/DT-edit for comprehensive examples (thanks, @LukasK13 #509 and @mgirlich #493).
 
 - Editing can be disabled on specified columns now: pass a list of the form `list(target = TARGET, disable = list(columns = INDICES))` to the `editable` argument of `datatable()`, where `TARGET` can be `'cell'`, `'row'`, `'column'`, or `'all'`, and `INDICES` is an integer vector of column indices (thanks, @opremicSebastian #657, @l-ts #550).
 

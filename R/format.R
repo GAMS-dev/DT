@@ -39,6 +39,8 @@ formatColumns = function(table, columns, template, ..., appendTo = c('columnDefs
 #' @param mark the marker after every \code{interval} decimals in the numbers
 #' @param dec.mark a character to indicate the decimal point
 #' @param before whether to place the currency symbol before or after the values
+#' @param zero.print a string to specify how zeros should be formatted.
+#'   Useful for when many zero values exist. If \code{NULL}, keeps zero as it is.
 #' @references See \url{https://rstudio.github.io/DT/functions.html} for detailed
 #'   documentation and examples.
 #' @note The length of arguments other than \code{table} should be 1 or the same as
@@ -68,11 +70,11 @@ formatColumns = function(table, columns, template, ..., appendTo = c('columnDefs
 #'   )
 formatCurrency = function(
   table, columns, currency = '$', interval = 3, mark = ',', digits = 2,
-  dec.mark = getOption('OutDec'), before = TRUE
+  dec.mark = getOption('OutDec'), before = TRUE, zero.print = NULL
 ) {
   currency = gsub("'", "\\\\'", currency)
   mark = gsub("'", "\\\\'", mark)
-  formatColumns(table, columns, tplCurrency, currency, interval, mark, digits, dec.mark, before)
+  formatColumns(table, columns, tplCurrency, currency, interval, mark, digits, dec.mark, before, zero.print)
 }
 
 #' @export
@@ -87,25 +89,25 @@ formatString = function(table, columns, prefix = '', suffix = '') {
 #' @rdname formatCurrency
 #' @param digits the number of decimal places to round to
 formatPercentage = function(
-  table, columns, digits = 0, interval = 3, mark = ',', dec.mark = getOption('OutDec')
+  table, columns, digits = 0, interval = 3, mark = ',', dec.mark = getOption('OutDec'), zero.print = NULL
 ) {
-  formatColumns(table, columns, tplPercentage, digits, interval, mark, dec.mark)
+  formatColumns(table, columns, tplPercentage, digits, interval, mark, dec.mark, zero.print)
 }
 
 #' @export
 #' @rdname formatCurrency
 formatRound = function(
-  table, columns, digits = 2, interval = 3, mark = ',', dec.mark = getOption('OutDec')
+  table, columns, digits = 2, interval = 3, mark = ',', dec.mark = getOption('OutDec'), zero.print = NULL
 ) {
-  formatColumns(table, columns, tplRound, digits, interval, mark, dec.mark)
+  formatColumns(table, columns, tplRound, digits, interval, mark, dec.mark, zero.print)
 }
 
 #' @export
 #' @rdname formatCurrency
 formatSignif = function(
-  table, columns, digits = 2, interval = 3, mark = ',', dec.mark = getOption('OutDec')
+  table, columns, digits = 2, interval = 3, mark = ',', dec.mark = getOption('OutDec'), zero.print = NULL
 ) {
-  formatColumns(table, columns, tplSignif, digits, interval, mark, dec.mark)
+  formatColumns(table, columns, tplSignif, digits, interval, mark, dec.mark, zero.print)
 }
 
 #' @export
@@ -191,12 +193,18 @@ name2int = function(name, names, rownames, noerror = FALSE) {
 
 colFormatter = function(name, names, rownames = TRUE, template, ...) {
   i = name2int(name, names, rownames)
-  js = sprintf("function(data, type, row, meta) { return %s }", template(...))
+  # see https://datatables.net/reference/option/columns.render
+  # #837 we only want to use the formatting for the "display" purpose
+  js = sprintf("function(data, type, row, meta) {
+    return type !== 'display' ? data : %s
+  }", template(...))
   Map(function(i, js) list(targets = i, render = JS(js)), i, js, USE.NAMES = FALSE)
 }
 
 appendFormatter = function(js, name, names, rownames = TRUE, template, ...) {
-  js = if (length(js) == 0) c('function(row, data) {', '}') else {
+  js = if (length(js) == 0) {
+    c('function(row, data, displayNum, displayIndex, dataIndex) {', '}')
+  } else {
     unlist(strsplit(as.character(js), '\n'))
   }
   i = name2int(name, names, rownames, noerror = TRUE)
@@ -206,11 +214,11 @@ appendFormatter = function(js, name, names, rownames = TRUE, template, ...) {
   ))
 }
 
-tplCurrency = function(currency, interval, mark, digits, dec.mark, before, ...) {
+tplCurrency = function(currency, interval, mark, digits, dec.mark, before, zero.print, ...) {
   sprintf(
-    "DTWidget.formatCurrency(data, %s, %d, %d, %s, %s, %s);",
+    "DTWidget.formatCurrency(data, %s, %d, %d, %s, %s, %s, %s);",
     jsValues(currency), digits, interval, jsValues(mark), jsValues(dec.mark),
-    jsValues(before)
+    jsValues(before), jsValuesHandleNull(zero.print)
   )
 }
 
@@ -221,24 +229,24 @@ tplString = function(prefix, suffix, ...) {
   )
 }
 
-tplPercentage = function(digits, interval, mark, dec.mark, ...) {
+tplPercentage = function(digits, interval, mark, dec.mark, zero.print, ...) {
   sprintf(
-    "DTWidget.formatPercentage(data, %d, %d, %s, %s);",
-    digits, interval, jsValues(mark), jsValues(dec.mark)
+    "DTWidget.formatPercentage(data, %d, %d, %s, %s, %s);",
+    digits, interval, jsValues(mark), jsValues(dec.mark), jsValuesHandleNull(zero.print)
   )
 }
 
-tplRound = function(digits, interval, mark, dec.mark, ...) {
+tplRound = function(digits, interval, mark, dec.mark, zero.print, ...) {
   sprintf(
-    "DTWidget.formatRound(data, %d, %d, %s, %s);",
-    digits, interval, jsValues(mark), jsValues(dec.mark)
+    "DTWidget.formatRound(data, %d, %d, %s, %s, %s);",
+    digits, interval, jsValues(mark), jsValues(dec.mark), jsValuesHandleNull(zero.print)
   )
 }
 
-tplSignif = function(digits, interval, mark, dec.mark, ...) {
+tplSignif = function(digits, interval, mark, dec.mark, zero.print, ...) {
   sprintf(
-    "DTWidget.formatSignif(data, %d, %d, %s, %s);",
-    digits, interval, jsValues(mark), jsValues(dec.mark)
+    "DTWidget.formatSignif(data, %d, %d, %s, %s, %s);",
+    digits, interval, jsValues(mark), jsValues(dec.mark), jsValuesHandleNull(zero.print)
   )
 }
 
@@ -287,6 +295,14 @@ jsValues = function(x) {
   vapply(x, jsonlite::toJSON, character(1), auto_unbox = TRUE)
 }
 
+jsValuesHandleNull = function(x) {
+  if (is.null(x)) {
+    "null"
+  } else {
+    jsValues(x)
+  }
+}
+
 
 #' Conditional CSS styles
 #'
@@ -315,6 +331,8 @@ jsValues = function(x) {
 #'
 #' The function \code{styleValue()} uses the column value as the CSS values.
 #'
+#' The function \code{styleRow()} applies the CSS values based on Row Indexes.
+#'
 #' @param cuts a vector of cut points (sorted increasingly)
 #' @param values a vector of CSS values
 #' @export
@@ -342,8 +360,9 @@ styleInterval = function(cuts, values) {
 #' @rdname styleInterval
 styleEqual = function(levels, values, default = NULL) {
   n = length(levels)
+  if (length(values) == 1L) values <- rep(values, n)
   if (n != length(values))
-    stop("length(levels) must be equal to length(values)")
+    stop("length(levels) must be equal to length(values) when `values` is not a scalar")
   if (!is.null(default) && (!is.character(default) || length(default) != 1))
     stop("default must be null or a string")
   if (n == 0) return("''")
@@ -360,7 +379,7 @@ styleEqual = function(levels, values, default = NULL) {
   # set the css to null will leave the attribute as it is. Despite it's not
   # documented explicitly but the jquery test covers this behavior
   # https://github.com/jquery/jquery/commit/2ae872c594790c4b935a1d7eabdf8b8212fd3c3f
-  default = if (is.null(default)) 'null' else jsValues(default)
+  default = jsValuesHandleNull(default)
   JS(paste0(js, default))
 }
 
@@ -385,7 +404,31 @@ styleColorBar = function(data, color, angle=90) {
   rg = range(data, na.rm = TRUE, finite = TRUE)
   r1 = rg[1]; r2 = rg[2]; r = r2 - r1
   JS(sprintf(
-    "isNaN(parseFloat(value)) || value <= %f ? '' : 'linear-gradient(%fdeg, transparent ' + (%f - value)/%f * 100 + '%%, %s ' + (%f - value)/%f * 100 + '%%)'",
+    "isNaN(parseFloat(value)) || value <= %f ? '' : 'linear-gradient(%fdeg, transparent ' + Math.max(%f - value, 0)/%f * 100 + '%%, %s ' + Math.max(%f - value, 0)/%f * 100 + '%%)'",
     r1, angle, r2, r, color, r2, r
   ))
+}
+
+#' @param rows the Row Indexes (starting from 1) that applies the CSS style. It could
+#' be an integer vector or a list of integer vectors, whose length must be equal to
+#' the length of \code{values}, when \code{values} is not a scalar.
+#' @rdname styleInterval
+#' @export
+styleRow = function(rows, values, default = NULL) {
+  n = length(rows)
+  if (length(values) == 1L) values <- rep(values, n)
+  if (n != length(values))
+    stop("length(rows) must be equal to length(values) when `values` is not a scalar")
+  if (!is.null(default) && (!is.character(default) || length(default) != 1))
+    stop("default must be null or a string")
+  if (n == 0) return("''")
+  values = jsValues(values)
+  js = ''
+  for (i in seq_len(n)) {
+    row = as.integer(rows[[i]])
+    # must use dataIndex + 1 as it's suppse
+    js = paste0(js, sprintf("$.inArray(dataIndex + 1, [%s]) >= 0 ? %s : ", toString(row), values[i]))
+  }
+  default = jsValuesHandleNull(default)
+  JS(paste0(js, default))
 }

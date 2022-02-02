@@ -52,7 +52,17 @@ encode_img = function(css) {
     if (length(ps) == 0) return(ps)
     # replace the first and the last `"` with empty
     ps = gsub('^"|^\'|"$|\'$', '', ps)
-    sapply(ps, knitr::image_uri)
+    localfiles = tempfile(fileext = paste0(".", tools::file_ext(ps)))
+    dld_or_cp = \(x, dest) {
+      if (xfun::is_web_path(x)) {
+        download.file(x, dest)
+      } else {
+        file.copy(x, dest)
+      }
+    }
+    Map(dld_or_cp, ps, localfiles) |> invisible()
+    on.exit(unlink(localfiles), add = TRUE)
+    sapply(localfiles, knitr::image_uri)
   })
   writeLines(x, css)
   invisible()
@@ -119,7 +129,7 @@ copy_js_css_swf = function(from_dir, to_dir) {
   to_files = file.path(to_dir, js_css_files)
   # create the sub-folder if doesn't exist
   lapply(Filter(Negate(dir.exists), dirname(to_files)), function(dir) {
-    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+    if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
   })
   file.copy(file.path(from_dir, js_css_files), to_files, overwrite = TRUE)
   invisible()
@@ -154,6 +164,7 @@ if (!dir.exists(dld_plugin_path())) system2(
   'git',
   args = c(
     'clone',
+    '--depth', '1',
     'https://github.com/DataTables/Plugins.git',
     dld_plugin_path()
   )
@@ -221,12 +232,15 @@ local({
 local({
   folders = list.dirs(dld_plugin_path(), recursive = FALSE)
   create_folder_and_move = function(js_file, folder) {
-    dir = file.path(folder, gsub('(\\.min)?[.]js$', '', js_file))
-    dir.create(dir)
-    file.rename(file.path(folder, js_file), file.path(dir, js_file))
+    file_name = gsub('(\\.min)?[.]js$', '', basename(js_file))
+    # sometimes it contain the dataTables prefix...
+    file_name = gsub('^dataTables[.]', '', file_name)
+    dir = file.path(folder, file_name)
+    if (!dir.exists(dir)) dir.create(dir)
+    file.rename(file.path(folder, js_file), file.path(dir, basename(js_file)))
   }
   lapply(folders, function(folder) {
-    js_files = list.files(folder, pattern = '[.]js$')
+    js_files = list.files(folder, pattern = '[.]js$', recursive = TRUE)
     lapply(js_files, create_folder_and_move, folder = folder)
   })
   files = list.files(dld_plugin_path(), '[.](js|css)$', recursive = TRUE, full.names = TRUE)
@@ -282,4 +296,6 @@ local({
 })
 
 # clean up download folder
-unlink(dld_folder(), recursive = TRUE)
+if (isTRUE(askYesNo("unlink download folder?"))) {
+  unlink(dld_folder(), recursive = TRUE)
+}
