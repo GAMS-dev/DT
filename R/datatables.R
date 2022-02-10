@@ -732,8 +732,11 @@ filterDependencies = function() {
       script = 'jquery.nouislider.min.js', stylesheet = 'jquery.nouislider.min.css'
     ),
     htmlDependency(
-      'selectize', '0.12.0', depPath('selectize'),
-      script = 'selectize.min.js', stylesheet = 'selectize.bootstrap3.css'
+      'selectize', '0.12.4', depPath('selectize'),
+      script = c(
+        "selectize.min.js",
+        "selectize-plugin-a11y.min.js"
+      ), stylesheet = 'selectize.bootstrap3.css'
     )
   )
 }
