@@ -860,7 +860,7 @@ HTMLWidgets.widget({
             }
           }).on('keyup', function(e) {
             // hit Escape to cancel editing
-            if (e.keyCode === 27) $input.trigger('blur');
+            if (e.keyCode === 27 || e.keyCode === 13) $input.trigger('blur');
           });
 
           // bulk edit (row, column, or all)
