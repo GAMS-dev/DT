@@ -234,6 +234,9 @@ datatable = function(
   # applied to the "original" column names, instead of the "modified“ ones, e.g., via the `colnames` arg
   options[["columnDefs"]] = colDefsTgtHandle(options[["columnDefs"]], base::colnames(data))
 
+  # box scalar elements of list columns
+  data = boxListColumnAtomicScalars(data)
+
   # align numeric columns to the right
   if (length(numc)) {
     # if the `className` of the column has already been defined by the user,
@@ -388,7 +391,7 @@ datatable = function(
     'datatables', if (hideDataTable) NULL else params,
     package = 'DT', width = width, height = height, elementId = elementId,
     sizingPolicy = htmlwidgets::sizingPolicy(
-      knitr.figure = FALSE, knitr.defaultWidth = "100%", knitr.defaultHeight = "auto"
+      knitr.figure = FALSE, defaultWidth = '100%', defaultHeight = 'auto'
     ),
     dependencies = deps, preRenderHook = function(instance) {
 
@@ -663,7 +666,7 @@ columnFilters = function(data) {
       type = if (is.numeric(d)) {
         if (is.integer(d)) 'integer' else 'number'
       } else 'time'
-      
+
       # convert date/times to JavaScript format
       if (type == 'time') {
         # JavaScript does have the Date type like R (YYYY-mm-dd without time)
@@ -724,7 +727,7 @@ columnFilterRow = function(filters, options = list()) {
 
   tds = lapply(filters, function(f) {
     p = f$params
-    
+
     # create HTML for the control element
     ctrl = if (f$control == 'slider') {
       tags$div(
@@ -775,7 +778,7 @@ columnFilterRow = function(filters, options = list()) {
         )
       )
     }
-    
+
     tags$td(tagList(input, ctrl), `data-type` = f$type, style = 'vertical-align: top;')
   })
 

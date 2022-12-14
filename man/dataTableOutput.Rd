@@ -7,9 +7,9 @@
 \alias{renderDT}
 \title{Helper functions for using DT in Shiny}
 \usage{
-dataTableOutput(outputId, width = "100\%", height = "auto")
+dataTableOutput(outputId, width = "100\%", height = "auto", fill = TRUE)
 
-DTOutput(outputId, width = "100\%", height = "auto")
+DTOutput(outputId, width = "100\%", height = "auto", fill = TRUE)
 
 renderDataTable(
   expr,
@@ -17,6 +17,7 @@ renderDataTable(
   env = parent.frame(),
   quoted = FALSE,
   funcFilter = dataTablesFilter,
+  future = FALSE,
   ...
 )
 
@@ -26,6 +27,7 @@ renderDT(
   env = parent.frame(),
   quoted = FALSE,
   funcFilter = dataTablesFilter,
+  future = FALSE,
   ...
 )
 }
@@ -35,6 +37,9 @@ renderDT(
 \item{width}{the width of the table container}
 
 \item{height}{the height of the table container}
+
+\item{fill}{passed to \code{htmlwidgets::\link{shinyWidgetOutput}()}, see
+there for explanation (requires \pkg{htmlwidgets} > v1.5.4).}
 
 \item{expr}{an expression to create a table widget (normally via
 \code{\link{datatable}()}), or a data object to be passed to
@@ -60,6 +65,10 @@ would like to use its expression as a value for \code{expr}, then you must set
 
 \item{funcFilter}{(for expert use only) passed to the \code{filter} argument
 of \code{\link{dataTableAjax}()}}
+
+\item{future}{whether the server-side filter function should be executed
+as a future or as a standard synchronous function. If true, the future
+will be evaluated according to the session's \link[future]{plan}.}
 
 \item{...}{ignored when \code{expr} returns a table widget, and passed as
 additional arguments to \code{\link{datatable}()} when \code{expr} returns

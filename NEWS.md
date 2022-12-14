@@ -1,5 +1,30 @@
+# CHANGES IN DT VERSION 0.27
+
+- `dataTableOutput()` gains a new `fill` parameter. When `TRUE` (the default), the widget's container element is allowed to grow/shrink to fit it's parent container so long as that parent is opinionated about its height and has been marked with `htmltools::bindFillRole(x, container = TRUE)`. (#2198)
+
+  - The primary motivation for this is to allow DT to grow/shrink [inside `bslib::card_body_fill()`](https://rstudio.github.io/bslib/articles/cards.html#responsive-sizing). When doing so, you'll also want to set `fillContainer = TRUE` in `datatable()`.
+  
+- Bug fixed: when editing a table, it was impossible to switch from an empty cell to 0 and vice-versa (thanks, @RozennGZ #1038, @stla #1039).
+
+# CHANGES IN DT VERSION 0.26
+
+- Upgraded DataTables to v1.12.1.
+
+- New extension [StateRestore](https://datatables.net/extensions/staterestore/examples/initialisation/index.html). It allows to save and restore DataTables states.
+
+- Default to `width: 100%; height: auto` instead of `500px x 960px` when statically rendering in browser (thanks, @cpsievert, #1022).
+
+# CHANGES IN DT VERSION 0.25
+
+- Server-side filtering is now able to be ran as a `future` via the **promises** package (@andyquinterom, #1011). See the argument `future` on the help page `?DT::renderDataTable` for more info.
+
+- Updated the `jszip` library to v3.10.1 (thanks, @hedsnz, #1017).
+
 # CHANGES IN DT VERSION 0.24
 
+- Fixed a bug with missing numeric values rendered as `0` (thanks, @tverbeke, #1000).
+
+- Box scalar elements of 'list' columns so that, e.g., `data.frame(col = I(integer(), 1, 2:3))` is represented in JavaScript as `[[], [1], [2, 3]]` instead of `[[], 1, [2, 3]]` (thanks, @mtmorgan, #1005).
 
 # CHANGES IN DT VERSION 0.23
 

@@ -1,7 +1,7 @@
 Package: DT
 Type: Package
 Title: A Wrapper of the JavaScript Library 'DataTables' (edited for MIRO)
-Version: 0.23.9999
+Version: 0.26.9999
 Authors@R: c(
     person("Yihui", "Xie", email = "xie@yihui.name", role = c("aut", "cre")),
     person("Joe", "Cheng", role = "aut"),
@@ -19,6 +19,8 @@ Authors@R: c(
     person("Alex", "Pickering", role = c("ctb")),
     person("William", "Holmes", role = c("ctb")),
     person("Mikko", "Marttila", role = c("ctb")),
+    person("Andres", "Quintero", role = c("ctb")),
+    person("Stéphane", "Laurent", role = c("ctb")),
     person("RStudio, PBC", role = "cph")
     )
 Maintainer: Yihui Xie <xie@yihui.name>
@@ -42,7 +44,8 @@ Suggests:
     rmarkdown,
     shiny (>= 1.6),
     bslib,
+    future,
     testit
 VignetteBuilder: knitr
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Encoding: UTF-8
