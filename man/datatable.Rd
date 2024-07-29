@@ -24,7 +24,8 @@ datatable(
   selection = c("multiple", "single", "none"),
   extensions = list(),
   plugins = NULL,
-  editable = FALSE
+  editable = FALSE,
+  title = NULL
 )
 }
 \arguments{

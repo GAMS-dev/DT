@@ -176,7 +176,7 @@ datatable = function(
   fillContainer = getOption('DT.fillContainer', NULL),
   autoHideNavigation = getOption('DT.autoHideNavigation', NULL),
   selection = c('multiple', 'single', 'none'), extensions = list(), plugins = NULL,
-  editable = FALSE
+  editable = FALSE, title = NULL
 ) {
 
   # yes, we all hate it
@@ -311,6 +311,7 @@ datatable = function(
   }
 
   params$caption = captionString(caption)
+  params$title = as.character(title)
 
   if (isTRUE(editable)) editable = 'cell'
   if (is.character(editable))

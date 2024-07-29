@@ -222,6 +222,10 @@ HTMLWidgets.widget({
 
     if (cells instanceof Array) cells = transposeArray2D(cells);
 
+    if (data.title) {
+      $el.append('<div class="dt-title"></div>')
+      $el.find('.dt-title').text(data.title);
+    }
     $el.append(data.container);
     var $table = $el.find('table');
     if (data.class) $table.addClass(data.class);
