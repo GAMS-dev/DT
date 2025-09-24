@@ -41,6 +41,9 @@ DTWidget.formatPercentage = function(data, digits, interval, mark, decMark, zero
 };
 
 DTWidget.formatRound = function(data, digits, interval, mark, decMark, zeroPrint) {
+  if (["-Inf", "Inf"].includes(data)) {
+    return(data)
+  }
   var d = parseFloat(data);
   if (isNaN(d)) return '';
   if (zeroPrint !== null && d === 0.0) return zeroPrint;
