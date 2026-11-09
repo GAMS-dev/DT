@@ -7,3 +7,6 @@
 ^NEWS.md$
 ^README\.md$
 ^cran-comments\.md$
+^LICENSE\.md$
+^_dev$
+^revdep$

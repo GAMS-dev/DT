@@ -1,9 +1,85 @@
+# CHANGES IN DT VERSION 0.35 (development version)
+
+- Fixed the bug that all tables will fail to render in Shiny when `DT::renderDT(NULL)` is present (thanks, @Noskario, #1183).
+
+- `datatable()` now renders data frames with `vctrs::list_of()` list-columns (#1180, @zeehio).
+
+# CHANGES IN DT VERSION 0.34
+
+- DT is now released under the MIT license (previously GPL-3) (#1175).
+
+- Added `lazyRender` parameter to `DT::datatable()`, which gives the option for the table to be rendered immediately rather than waiting for it to become visible (thanks, @Mosk915, #1156).
+
+- Moved **httpuv** from `Imports` to `Suggests` in `DESCRIPTION` (thanks, @MichaelChirico, #1159).
+
+# CHANGES IN DT VERSION 0.33
+
+- Added `outputArgs` parameter to `renderDataTable`, to allow width and height to be set when using interactive R Markdown documents.
+
+- Fixed a bug in `renderDT()`'s evaluation of `...` arguments when `quoted = TRUE` (#1130).
+
+- Maintain selected columns/rows/cells upon re-render (thanks, @epruesse, #1125).
+
+# CHANGES IN DT VERSION 0.32
+
+- Fixed a bug that caused the column used for grouping with the RowGroup extension to change when relocated by the ColReorder extension (thanks, @isthisthat, @mikmart, #1109).
+
+- Fixed the bug that `replaceData()` failed to work with data that has no column names (thanks, @mmuurr, #1108).
+
+- `updateSearch()` now sets the slider values based on the new search string for numeric columns (thanks, @mikmart, #1110).
+
+- The `searchCols` option now sets the slider values for numeric columns when `server = TRUE` (thanks, @alexvpickering, @mikmart, #998).
+
+- Added server-side processing support for the [SearchBuilder](https://datatables.net/extensions/searchbuilder/) extension (thanks, @AhmedKhaled945, @shrektan, @mikmart, #963).
+
+- Fixed a bug that caused the date picker widget from the DateTime extension to render incorrectly (thanks, @mikmart, #1116).
+
+- Column formatting now also applies to range labels shown on filter sliders (thanks, @GitChub, @mikmart, #247).
+
+- Added support for passing custom configuration for initializing filter widgets in JavaScript. Use the `filter` parameter to `datatable()` in the form `filter = list(settings = list(select = ..., slider = ...))` (thanks, @yogat3ch, @DavidBlairs, @mikmart, #1072, #1083).
+
+# CHANGES IN DT VERSION 0.31
+
+- Upgraded DataTables version to 1.13.6 (thanks, @stla, #1091).
+
+- Searching and sorting work now when columns are re-ordered by the `ColReorder` extension (thanks, @ashbaldry #1096, @gergness #534, @nmoraesmunter #921, @isthisthat #1069).
+
+- Fixed disabling selection on hyperlink clicks (thanks, @guoci, #1093).
+
+- Fixed an error for R >= 4.3.0 (thanks, @AntoineMichelet, #1095).
+
+# CHANGES IN DT VERSION 0.30
+
+- Fixed a bug that when using `updateSearch()`, the clear button inside the input box doesn't show up, and the table doesn't update when the input is cleared (thanks, @DavidBlairs, #1082).
+
+- Added support for a list of Booleans as input to the `class` argument of `DT::datatable()` when `style = 'bootstrap'` (thanks, @pedropark99, #1089). In other words, you can now select the Bootstrap classes you want to use at `DT::datatable()` by using a list of Booleans that select the classes you want to use. In the example below, we are producing an HTML table that uses the `stripe` and `hover` Bootstrap classes:
+
+    ```r
+    DT::datatable(mtcars, class = list(stripe = TRUE, compact = FALSE, hover = TRUE), style = "bootstrap")
+    ```
+
+- Handle `NULL` return from `bslib::theme_version()` (thanks, @slodge-work, #1090).
+
+# CHANGES IN DT VERSION 0.29
+
+- Support Bootstrap 5 with `datatable(style = "auto")` (thanks, @gadenbuie, #1074).
+
+- Fixed a bug that searching would fail when the keyword contains special characters such as `&` (thanks, @dfriend21 @olivier7121, #1075).
+
+- Deleted `()` after `eval` in a JS *comment* to prevent Google from treating it as malware, which is just a false alarm (thanks, @gorkang, #1080).
+
+# CHANGES IN DT VERSION 0.28
+
+- Upgraded DataTables to v1.13.4 (thanks, @stla, #1063).
+
+- It is now possible to edit date columns with the help of calendar inputs (thanks, @stla, #1064).
+
 # CHANGES IN DT VERSION 0.27
 
 - `dataTableOutput()` gains a new `fill` parameter. When `TRUE` (the default), the widget's container element is allowed to grow/shrink to fit it's parent container so long as that parent is opinionated about its height and has been marked with `htmltools::bindFillRole(x, container = TRUE)`. (#2198)
 
   - The primary motivation for this is to allow DT to grow/shrink [inside `bslib::card_body_fill()`](https://rstudio.github.io/bslib/articles/cards.html#responsive-sizing). When doing so, you'll also want to set `fillContainer = TRUE` in `datatable()`.
-  
+
 - Bug fixed: when editing a table, it was impossible to switch from an empty cell to 0 and vice-versa (thanks, @RozennGZ #1038, @stla #1039).
 
 - When a `datatable()` is created outside a Shiny app, the `selection` argument won't work (thanks, @bartekch, #1043).
@@ -101,7 +177,7 @@
 
 - `datatable()`'s `style` argument now defaults to `'auto'`, which resolves to either `'bootstrap'` or `'bootstrap4'` when a `{bslib}` theme is relevant. If a `{bslib}` theme isn't relevant, `'auto'` resolves to the old default value of `'default'` (thanks, @cpsievert, #852).
 
-- Add a new function `styleRow()`. It's useful when you want to apply CSS styles based on Row Indexes (thanks, @s-fleck, #894). 
+- Add a new function `styleRow()`. It's useful when you want to apply CSS styles based on Row Indexes (thanks, @s-fleck, #894).
 
 ## BUG FIXES
 
@@ -117,7 +193,7 @@
 
 ## MINOR CHANGES
 
-- The `autoHideNavigation` argument now works with the default theme. In addition, the prerequisite is properly documented. Specifically speaking, it only works when the `pageLength` option is provided and is rendered in the client-side processing mode (thanks, @bhogan-mitre, #856). 
+- The `autoHideNavigation` argument now works with the default theme. In addition, the prerequisite is properly documented. Specifically speaking, it only works when the `pageLength` option is provided and is rendered in the client-side processing mode (thanks, @bhogan-mitre, #856).
 
 - When editing factor columns, `editData()` now automatically updates the factor levels if it's necessary (thanks, @aman-malik3010, #865).
 
@@ -206,9 +282,9 @@
 
 - Support the Select extension on the client-side processing mode (thanks, @shrektan, #744).
 
-- Support [features/scrollResize plug-in](https://datatables.net/blog/2017-12-31) (thanks, @andrewkho @shrektan, #467 #754).
+- Support [features/scrollResize plug-in](https://datatables.net/blog/2017/vertical-scroll-fitting) (thanks, @andrewkho @shrektan, #467 #754).
 
-- Upgrade DataTables to 1.10.20 and support the new datatables extension [SearchPanes](https://datatables.net/blog/2020-01-13) (thanks, @shrektan, #756).
+- Upgrade DataTables to 1.10.20 and support the new datatables extension [SearchPanes](https://datatables.net/blog/2020/searchpanes) (thanks, @shrektan, #756).
 
 ## BUG FIXES
 
